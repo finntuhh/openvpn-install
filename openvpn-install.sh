@@ -409,7 +409,7 @@ function installQuestions() {
 		echo "   5) AES-192-CBC"
 		echo "   6) AES-256-CBC"
 		until [[ $CIPHER_CHOICE =~ ^[1-6]$ ]]; do
-			read -rp "Cipher [1-6]: " -e -i 1 CIPHER_CHOICE
+			read -rp "Cipher [1-6]: " -e -i 3 CIPHER_CHOICE
 		done
 		case $CIPHER_CHOICE in
 		1)
@@ -446,7 +446,7 @@ function installQuestions() {
 			echo "   2) secp384r1"
 			echo "   3) secp521r1"
 			until [[ $CERT_CURVE_CHOICE =~ ^[1-3]$ ]]; do
-				read -rp"Curve [1-3]: " -e -i 1 CERT_CURVE_CHOICE
+				read -rp"Curve [1-3]: " -e -i 2 CERT_CURVE_CHOICE
 			done
 			case $CERT_CURVE_CHOICE in
 			1)
@@ -467,7 +467,7 @@ function installQuestions() {
 			echo "   2) 3072 bits"
 			echo "   3) 4096 bits"
 			until [[ $RSA_KEY_SIZE_CHOICE =~ ^[1-3]$ ]]; do
-				read -rp "RSA key size [1-3]: " -e -i 1 RSA_KEY_SIZE_CHOICE
+				read -rp "RSA key size [1-3]: " -e -i 2 RSA_KEY_SIZE_CHOICE
 			done
 			case $RSA_KEY_SIZE_CHOICE in
 			1)
@@ -489,7 +489,7 @@ function installQuestions() {
 			echo "   1) ECDHE-ECDSA-AES-128-GCM-SHA256 (recommended)"
 			echo "   2) ECDHE-ECDSA-AES-256-GCM-SHA384"
 			until [[ $CC_CIPHER_CHOICE =~ ^[1-2]$ ]]; do
-				read -rp"Control channel cipher [1-2]: " -e -i 1 CC_CIPHER_CHOICE
+				read -rp"Control channel cipher [1-2]: " -e -i 2 CC_CIPHER_CHOICE
 			done
 			case $CC_CIPHER_CHOICE in
 			1)
@@ -504,7 +504,7 @@ function installQuestions() {
 			echo "   1) ECDHE-RSA-AES-128-GCM-SHA256 (recommended)"
 			echo "   2) ECDHE-RSA-AES-256-GCM-SHA384"
 			until [[ $CC_CIPHER_CHOICE =~ ^[1-2]$ ]]; do
-				read -rp"Control channel cipher [1-2]: " -e -i 1 CC_CIPHER_CHOICE
+				read -rp"Control channel cipher [1-2]: " -e -i 2 CC_CIPHER_CHOICE
 			done
 			case $CC_CIPHER_CHOICE in
 			1)
@@ -531,7 +531,7 @@ function installQuestions() {
 			echo "   2) secp384r1"
 			echo "   3) secp521r1"
 			while [[ $DH_CURVE_CHOICE != "1" && $DH_CURVE_CHOICE != "2" && $DH_CURVE_CHOICE != "3" ]]; do
-				read -rp"Curve [1-3]: " -e -i 1 DH_CURVE_CHOICE
+				read -rp"Curve [1-3]: " -e -i 2 DH_CURVE_CHOICE
 			done
 			case $DH_CURVE_CHOICE in
 			1)
@@ -552,7 +552,7 @@ function installQuestions() {
 			echo "   2) 3072 bits"
 			echo "   3) 4096 bits"
 			until [[ $DH_KEY_SIZE_CHOICE =~ ^[1-3]$ ]]; do
-				read -rp "DH key size [1-3]: " -e -i 1 DH_KEY_SIZE_CHOICE
+				read -rp "DH key size [1-3]: " -e -i 2 DH_KEY_SIZE_CHOICE
 			done
 			case $DH_KEY_SIZE_CHOICE in
 			1)
@@ -579,7 +579,7 @@ function installQuestions() {
 		echo "   2) SHA-384"
 		echo "   3) SHA-512"
 		until [[ $HMAC_ALG_CHOICE =~ ^[1-3]$ ]]; do
-			read -rp "Digest algorithm [1-3]: " -e -i 1 HMAC_ALG_CHOICE
+			read -rp "Digest algorithm [1-3]: " -e -i 2 HMAC_ALG_CHOICE
 		done
 		case $HMAC_ALG_CHOICE in
 		1)
@@ -775,7 +775,7 @@ function installOpenVPN() {
 		echo "proto ${PROTOCOL}6" >>/etc/openvpn2/server.conf
 	fi
 
-	echo "dev tun
+	echo "dev tap0
 user nobody
 group $NOGROUP
 persist-key
@@ -857,6 +857,9 @@ ifconfig-pool-persist ipp.txt" >>/etc/openvpn2/server.conf
 		;;
 	esac
 	echo 'push "redirect-gateway def1 bypass-dhcp"' >>/etc/openvpn2/server.conf
+
+	echo 'push "route 10.8.0.0"' >>/etc/openvpn2/server.conf
+	echo 'push "remote-gateway 10.8.0.1"' >>/etc/openvpn2/server.conf
 
 	# IPv6 network settings if needed
 	if [[ $IPV6_SUPPORT == 'y' ]]; then
@@ -963,36 +966,36 @@ verb 3" >>/etc/openvpn2/server.conf
 	mkdir -p /etc/iptables
 
 	# Script to add rules
-	echo "#!/bin/sh
-iptables -t nat -I POSTROUTING 1 -s 10.8.0.0/24 -o $NIC -j MASQUERADE
-iptables -I INPUT 1 -i tun0 -j ACCEPT
-iptables -I FORWARD 1 -i $NIC -o tun0 -j ACCEPT
-iptables -I FORWARD 1 -i tun0 -o $NIC -j ACCEPT
-iptables -I INPUT 1 -i $NIC -p $PROTOCOL --dport $PORT -j ACCEPT" >/etc/iptables/add-openvpn-rules.sh
+#	echo "#!/bin/sh
+#iptables -t nat -I POSTROUTING 1 -s 10.8.0.0/24 -o $NIC -j MASQUERADE
+#iptables -I INPUT 1 -i tun0 -j ACCEPT
+#iptables -I FORWARD 1 -i $NIC -o tun0 -j ACCEPT
+#iptables -I FORWARD 1 -i tun0 -o $NIC -j ACCEPT
+#iptables -I INPUT 1 -i $NIC -p $PROTOCOL --dport $PORT -j ACCEPT" >/etc/iptables/add-openvpn-rules.sh
 
-	if [[ $IPV6_SUPPORT == 'y' ]]; then
-		echo "ip6tables -t nat -I POSTROUTING 1 -s fd42:42:42:42::/112 -o $NIC -j MASQUERADE
-ip6tables -I INPUT 1 -i tun0 -j ACCEPT
-ip6tables -I FORWARD 1 -i $NIC -o tun0 -j ACCEPT
-ip6tables -I FORWARD 1 -i tun0 -o $NIC -j ACCEPT
-ip6tables -I INPUT 1 -i $NIC -p $PROTOCOL --dport $PORT -j ACCEPT" >>/etc/iptables/add-openvpn-rules.sh
-	fi
+#	if [[ $IPV6_SUPPORT == 'y' ]]; then
+#		echo "ip6tables -t nat -I POSTROUTING 1 -s fd42:42:42:42::/112 -o $NIC -j MASQUERADE
+#ip6tables -I INPUT 1 -i tun0 -j ACCEPT
+#ip6tables -I FORWARD 1 -i $NIC -o tun0 -j ACCEPT
+#ip6tables -I FORWARD 1 -i tun0 -o $NIC -j ACCEPT
+#ip6tables -I INPUT 1 -i $NIC -p $PROTOCOL --dport $PORT -j ACCEPT" >>/etc/iptables/add-openvpn-rules.sh
+#	fi
 
 	# Script to remove rules
-	echo "#!/bin/sh
-iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o $NIC -j MASQUERADE
-iptables -D INPUT -i tun0 -j ACCEPT
-iptables -D FORWARD -i $NIC -o tun0 -j ACCEPT
-iptables -D FORWARD -i tun0 -o $NIC -j ACCEPT
-iptables -D INPUT -i $NIC -p $PROTOCOL --dport $PORT -j ACCEPT" >/etc/iptables/rm-openvpn-rules.sh
+#	echo "#!/bin/sh
+#iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o $NIC -j MASQUERADE
+#iptables -D INPUT -i tun0 -j ACCEPT
+#iptables -D FORWARD -i $NIC -o tun0 -j ACCEPT
+#iptables -D FORWARD -i tun0 -o $NIC -j ACCEPT
+#iptables -D INPUT -i $NIC -p $PROTOCOL --dport $PORT -j ACCEPT" >/etc/iptables/rm-openvpn-rules.sh
 
-	if [[ $IPV6_SUPPORT == 'y' ]]; then
-		echo "ip6tables -t nat -D POSTROUTING -s fd42:42:42:42::/112 -o $NIC -j MASQUERADE
-ip6tables -D INPUT -i tun0 -j ACCEPT
-ip6tables -D FORWARD -i $NIC -o tun0 -j ACCEPT
-ip6tables -D FORWARD -i tun0 -o $NIC -j ACCEPT
-ip6tables -D INPUT -i $NIC -p $PROTOCOL --dport $PORT -j ACCEPT" >>/etc/iptables/rm-openvpn-rules.sh
-	fi
+#	if [[ $IPV6_SUPPORT == 'y' ]]; then
+#		echo "ip6tables -t nat -D POSTROUTING -s fd42:42:42:42::/112 -o $NIC -j MASQUERADE
+#ip6tables -D INPUT -i tun0 -j ACCEPT
+#ip6tables -D FORWARD -i $NIC -o tun0 -j ACCEPT
+#ip6tables -D FORWARD -i tun0 -o $NIC -j ACCEPT
+#ip6tables -D INPUT -i $NIC -p $PROTOCOL --dport $PORT -j ACCEPT" >>/etc/iptables/rm-openvpn-rules.sh
+#	fi
 
 	chmod +x /etc/iptables/add-openvpn-rules.sh
 	chmod +x /etc/iptables/rm-openvpn-rules.sh
@@ -1031,7 +1034,7 @@ WantedBy=multi-user.target" >/etc/systemd/system/iptables-openvpn.service
 		echo "proto tcp-client" >>/etc/openvpn2/client-template.txt
 	fi
 	echo "remote $IP $PORT
-dev tun
+dev tap0
 resolv-retry infinite
 nobind
 persist-key
